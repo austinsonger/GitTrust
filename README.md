@@ -1,5 +1,6 @@
 # GitTrust (GT): Enhanced S/MIME Commit Signing with Device Authentication
-
+> Inspired By: [FIGMA](https://www.figma.com/blog/how-we-enforce-device-trust-on-code-changes/)
+--------
 To proactively mitigate the risk of malicious code reaching production, SGT will ensure that code changes merged into GitHub release branches come from trusted, company-managed devices. It does this by S/MIME signing for Git commits in an environment where devices are managed by MDM and access control is managed by Okta. It ensures that only compliant devices can make signed commits to Git repositories.
 
 **Table of Contents**
