@@ -29,7 +29,11 @@ S/MIME signing for Git commits in an environment where devices are managed by Ka
 - The integration ensures that Kandji-managed Apple devices are recognized before users can access Okta-protected apps, enabling password-less authentication experiences like Okta FastPass​​.
 - Once ODT is set up, enabled, and scoped to your blueprints in Kandji, settings payloads are automatically configured and delivered to Apple devices. This includes a unique Okta SCEP certificate per device used in the device registration process and configurations for macOS, iOS, and iPadOS devices to integrate with Okta Verify​
 
+### TO DO
 
+- [ ] Integrate Kandji's certificate management features with your Git commit signing process, with use of S/MIME certificates.
+- [ ] Leverage the Okta Device Trust integration to manage access to Okta-protected resources, ensuring devices are managed by Kandji and meets trust criteria.
+- [ ] Develop or modify tools to work with Kandji's PKCS #12-formatted certificates, fetching the latest key ID for signing at the time of commit.
 
 ## Setting Up Kandji
 Kandji is used for deploying PKCS #12-formatted S/MIME certificates to Apple devices.
