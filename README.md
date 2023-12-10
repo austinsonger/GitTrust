@@ -16,6 +16,21 @@ S/MIME signing for Git commits in an environment where devices are managed by Ka
 - `smimesign` utility.
 - Access to Okta for identity and access management.
 
+## Handling of Device Trust Certificates
+
+### Certificate Profile Configuration
+
+- Kandji allows you to configure and deploy certificate profiles to Apple devices. This feature is used for services requiring a valid certificate trust chain or apps that support certificate-based authentication​​.
+- Kandji supports PKCS #1-formatted certificate files (.cer, .crt, .der) containing only the certificate, and PKCS #12-formatted files (.p12, .pfx) that include both the certificate and its corresponding private key​​.
+- For PKCS #12-formatted certificates, Kandji provides options for naming the certificate, setting a password, uploading the certificate file, allowing apps to access the private key, and preventing the private key from being extracted from the keychain​​.
+
+### Okta Device Trust Integration
+- Kandji's Okta Device Trust (ODT) integration combines device management with Okta's app management capabilities. This integration is built on Okta Identity Engine (OIE) and streamlines the setup and configuration of ODT by automatically deploying ODT configurations to devices​​.
+- The integration ensures that Kandji-managed Apple devices are recognized before users can access Okta-protected apps, enabling password-less authentication experiences like Okta FastPass​​.
+- Once ODT is set up, enabled, and scoped to your blueprints in Kandji, settings payloads are automatically configured and delivered to Apple devices. This includes a unique Okta SCEP certificate per device used in the device registration process and configurations for macOS, iOS, and iPadOS devices to integrate with Okta Verify​
+
+
+
 ## Setting Up Kandji
 Kandji is used for deploying PKCS #12-formatted S/MIME certificates to Apple devices.
 
@@ -42,7 +57,23 @@ Okta is used to ensure that only compliant devices have access to Git repositori
 Scripts automate the retrieval and use of S/MIME certificates for signing commits.
 
 ### Key Scripts:
-- `fetch_certificate.sh`: Retrieves the current S/MIME certificate from the Keychain.
-- `sign_commit.sh`: Wrapper script for Git commits using the fetched certificate.
+- `setup_smimesign.sh`: This script will install smimesign and configure Git to use it for commit signing.
+- `fetch_certificate.sh`: This script will interact with the macOS Keychain (where Kandji deploys certificates) to fetch the current S/MIME certificate for signing commits.
+- `sign_commit.sh`: A wrapper script for Git commits, ensuring that each commit is signed with the appropriate certificate.
+
+### Usage Instructions
+
+1. Make these scripts executable: `chmod +x setup_smimesign.sh fetch_certificate.sh sign_commit.sh`
+2. Run `./setup_smimesign.sh` to set up smimesign.
+3. Use `./sign_commit.sh` "Your commit message" to make a signed commit.
+
+
+
+
+
+
+
+
+
 
 
