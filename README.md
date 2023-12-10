@@ -101,4 +101,7 @@ Scripts automate the retrieval and use of S/MIME certificates for signing commit
 - [Okta Integration](#okta-integration)
 - [Scripts for Automation](#scripts-for-automation)
 
+# References
+- https://api-docs.kandji.io/
+
 
