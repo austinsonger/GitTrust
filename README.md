@@ -36,6 +36,7 @@ To proactively mitigate the risk of malicious code reaching production, SGT will
 
 #### TO DO
 
+- [ ] Issue X.509 Okta Device Trust certificates to MacBooks from an Amazon Private Certificate Authority (CA) (The certificates will be distributed through MDM, renew every 30 days, and attest that a laptop meets Endpoint Security Baseline criteria at the time they’re issued.)
 - [ ] Integrate Kandji's certificate management features with your Git commit signing process, with use of S/MIME certificates.
 - [ ] Leverage the Okta Device Trust integration to manage access to Okta-protected resources, ensuring devices are managed by Kandji and meets trust criteria.
 - [ ] Develop or modify tools to work with Kandji's PKCS #12-formatted certificates, fetching the latest key ID for signing at the time of commit.
