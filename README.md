@@ -3,6 +3,11 @@
 --------
 To proactively mitigate the risk of malicious code reaching production, SGT will ensure that code changes merged into GitHub release branches come from trusted, company-managed devices. It does this by S/MIME signing for Git commits in an environment where devices are managed by MDM and access control is managed by Okta. It ensures that only compliant devices can make signed commits to Git repositories.
 
+**PROJECT-WIDE TO-DO**
+- [ ] Issue X.509 Okta Device Trust certificates to MacBooks from an Amazon Private Certificate Authority (CA) (The certificates will be distributed through MDM, renew every 30 days, and attest that a laptop meets Endpoint Security Baseline criteria at the time they’re issued.)
+  - Enforce [NISTGOV Baselines via macOS Security Compliance Project](https://github.com/usnistgov/macos_security/tree/main/baselines)
+
+
 **Table of Contents**
 - [With Kandji](#with-kandji)
 - [With JAMF](#with-jamf)
@@ -37,7 +42,6 @@ To proactively mitigate the risk of malicious code reaching production, SGT will
 
 #### TO DO
 
-- [ ] Issue X.509 Okta Device Trust certificates to MacBooks from an Amazon Private Certificate Authority (CA) (The certificates will be distributed through MDM, renew every 30 days, and attest that a laptop meets Endpoint Security Baseline criteria at the time they’re issued.)
 - [ ] Integrate Kandji's certificate management features with your Git commit signing process, with use of S/MIME certificates.
 - [ ] Leverage the Okta Device Trust integration to manage access to Okta-protected resources, ensuring devices are managed by Kandji and meets trust criteria.
 - [ ] Develop or modify tools to work with Kandji's PKCS #12-formatted certificates, fetching the latest key ID for signing at the time of commit.
