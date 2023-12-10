@@ -33,8 +33,26 @@ def verify_commit_signature(commit_sha):
     pass
 
 def post_commit_status_to_github(commit_sha, status):
-    # TO DO: Use GitHub API to post commit status
-    # TO DO: Implement GitHub App authentication and API request
+    # GitHub API URL for setting commit status
+    github_api_url = f"https://api.github.com/repos/[Your-Repo-Owner]/[Your-Repo-Name]/statuses/{commit_sha}"
+    
+    # GitHub App authentication token
+    github_token = get_secret("GITHUB_APP_TOKEN")
+
+    # Prepare the payload
+    status_payload = {
+        "state": "success" if status else "failure",
+        "context": "commit-integrity-verification",
+        "description": "Commit signature verified" if status else "Commit signature verification failed"
+    }
+
+    # Post the status to GitHub
+    response = requests.post(
+        github_api_url,
+        headers={"Authorization": f"Bearer {github_token}"},
+        json=status_payload
+    )
+    return response.ok
     pass
 
 def get_secret(secret_name):
