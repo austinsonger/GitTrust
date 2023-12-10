@@ -1,7 +1,7 @@
-# S/MIME Git Commit Signing Integration with Kandji and Okta
+# SecureGit-KandjiTrust (SGKT): Enhanced S/MIME Commit Signing with Device Authentication
 
 ## Overview
-This project outlines the integration of S/MIME signing for Git commits in an environment where devices are managed by Kandji and access control is managed by Okta. It ensures that only compliant devices can make signed commits to Git repositories.
+S/MIME signing for Git commits in an environment where devices are managed by Kandji and access control is managed by Okta. It ensures that only compliant devices can make signed commits to Git repositories.
 
 ## Table of Contents
 - [Prerequisites](#prerequisites)
@@ -9,9 +9,6 @@ This project outlines the integration of S/MIME signing for Git commits in an en
 - [Integrating `smimesign`](#integrating-smimesign)
 - [Okta Integration](#okta-integration)
 - [Scripts for Automation](#scripts-for-automation)
-- [Testing and Deployment](#testing-and-deployment)
-- [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
 
 ## Prerequisites
 - Access to Kandji for device management.
@@ -47,18 +44,5 @@ Scripts automate the retrieval and use of S/MIME certificates for signing commit
 ### Key Scripts:
 - `fetch_certificate.sh`: Retrieves the current S/MIME certificate from the Keychain.
 - `sign_commit.sh`: Wrapper script for Git commits using the fetched certificate.
-
-## Testing and Deployment
-Rigorously test the system in a controlled environment before deployment.
-
-## Troubleshooting
-Guidelines for resolving common issues.
-
-## Contributing
-Instructions for contributing to the project.
-
----
-
-## License
 
 
