@@ -13,6 +13,16 @@ To proactively mitigate the risk of malicious code reaching production, GitTrust
 - [With Jumpcloud](/jumpcloud/README.md)
 
 
+# Signing Commits with Device Trust Certificates
+
+![](/images/Signing%20Commits%20with%20Device%20Trust%20Certificates.png)
+
+# Verifying Signatures with AWS Lambda and GitHub Apps
+![](/images/Verifying%20Signatures%20with%20AWS%20Lambda%20and%20GitHub%20.png)
+
+
+# Verifying Bot-authored Commits
+![](/images/Verifying%20Bot-authored%20Commits.png)
 
 
 
