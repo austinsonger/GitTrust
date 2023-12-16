@@ -1,3 +1,6 @@
+###########
+# PURPOSE: The script should interact with the JAMF API to manage certificates on devices, ensuring they are appropriately used for signing commits. 
+###########
 import requests
 import json
 import os
