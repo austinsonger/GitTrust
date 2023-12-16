@@ -14,12 +14,6 @@ To proactively mitigate the risk of malicious code reaching production, GitTrust
 - [With Jumpcloud](#with-jumpcloud)
 
 ## With Kandi
-### Table of Contents
-- [Prerequisites](#prerequisites)
-- [Setting Up Kandji](#setting-up-kandji)
-- [Integrating `smimesign`](#integrating-smimesign)
-- [Okta Integration](#okta-integration)
-- [Scripts for Automation](#scripts-for-automation)
 
 ### Prerequisites
 - Access to Kandji for device management.
@@ -84,12 +78,43 @@ Scripts automate the retrieval and use of S/MIME certificates for signing commit
 
 
 ## With JAMF
-### Table of Contents
-- [JAMF Prerequisites](#jamf-prerequisites)
-- [Setting Up JAMF](#setting-up-jamf)
-- [Integrating `smimesign`](#integrating-smimesign)
-- [Okta Integration](#okta-integration)
-- [Scripts for Automation](#scripts-for-automation)
+
+### Prerequisites
+- Access to JAMF for device management.
+- Git installed on macOS devices.
+- `smimesign` utility.
+- Access to Okta for identity and access management.
+
+
+### 1. Signing Commits with Device Trust Certificates
+- **Setup of `smimesign` and `smimesign-figma`**:
+    - Install `smimesign`, an S/MIME signing utility for Git, on the devices managed by JAMF Pro.
+    - Modify or create a version of `smimesign` (referred to as `smimesign-figma`) that is specifically tailored to your organization's requirements, possibly to handle unique aspects of your certificate setup or integration needs.
+    - Ensure that this custom utility can interact correctly with the S/MIME certificates deployed on the devices.
+- **Deployment of S/MIME Certificates via JAMF Pro**:
+    - Use JAMF Pro to deploy S/MIME certificates, issued by your private CA, to the Apple devices. These certificates are essential for signing commits.
+    - Configure the certificate profiles correctly to ensure that the certificates are installed in the appropriate locations on the devices (e.g., system vs. user keychain on macOS).
+- **Wrapper Script for Dynamic Key Fetching**:
+    - Develop a wrapper script that facilitates the dynamic fetching of the key ID from the S/MIME certificates for signing commits.
+    - This script should interface with the macOS Keychain (or appropriate certificate store) to retrieve the current certificate or key ID when a commit is made.
+### 2. Verifying Signatures with AWS Lambda and GitHub Apps
+- **AWS Lambda Function Setup**:
+    - Create an AWS Lambda function that is triggered by GitHub webhook events for new commits.
+    - Program this function to extract and verify the S/MIME signatures from the commits, ensuring they are signed with certificates issued by your private CA.
+- **Integration with GitHub Apps**:
+    - Set up a GitHub App that integrates with your Lambda function. This App will facilitate the communication between GitHub and the AWS environment.
+    - Ensure the GitHub App has the necessary permissions to access commit data and report status back to GitHub.
+- **Webhook Integration**:
+    - Configure webhooks in your GitHub repositories to trigger the Lambda function upon new commit events.
+    - These webhooks should send the necessary data (like commit details and signatures) to the Lambda function for processing.
+### 3. Verifying Bot-authored Commits
+- **Allowlist for Bot Commits**:
+    - Create and maintain an allowlist of trusted bots (like Dependabot).
+    - Implement logic in your verification process (either in the Lambda function or an additional script) to identify and handle commits made by these bots.
+
+
+### JAMF Scripts for Automation
+
 
 
 
@@ -111,6 +136,7 @@ Scripts automate the retrieval and use of S/MIME certificates for signing commit
 ### Handling of Device Trust Certificates
 
 #### Certificate Profile Configuration
+
 
 1. **Certificate Bundle Components**: The Device Trust Certificate Bundle includes a Root Certificate, an Intermediate Certificate, a Leaf Certificate, and a Private Key. The Root Certificate is self-signed, and the Leaf Certificate contains a unique identifier. The Private Key is created by the agent to generate the certificate signing request​[](https://jumpcloud.com/support/manage-device-trust-certificates)​.
 2. **Storage Locations**:
