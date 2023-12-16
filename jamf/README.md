@@ -1,12 +1,37 @@
 > JAMF Pro uses XML configuration profiles for certificate deployment. While JAMF Pro doesn't support direct scripting for profile creation, you can automate the process using its API.
 
-## Overview
+# Process Overview
+1. **Certificate Issuance and Management**:
+    - Amazon Private CA issues X.509 Okta Device Trust certificates.
+    - These certificates are stored in the macOS Keychain on MacBooks.
+2. **Making a Signed Commit**:
+    - When a signed commit is required, the `fetch_smime_key_id_macos` function in `mimesign-wrapper.sh` is called.
+    - This function retrieves the S/MIME Key ID of the certificate from the macOS Keychain.
+    - `smimesign` uses the fetched Key ID to sign the commit.
+3. **Enforcing Commit Signing on JAMF Server**:
+    - The `jamf-commit-signing.py` AWS Lambda function is utilized.
+    - This function should ensure that commits are signed as per the policy set on the JAMF server.
+4. **Verifying Signed Commits on GitHub**:
+    - The `jamf-github-commit-verifier.py` AWS Lambda function is used for this purpose.
+    - It verifies the signed commits against the set criteria, such as the validity of the S/MIME signature and the device trust status.
 
-1. The Amazon Private CA issues X.509 Okta Device Trust certificates to MacBooks. These certificates are stored in the macOS Keychain.
-2. When you want to make a signed commit, the `fetch_smime_key_id_macos` function in `mimesign-wrapper.sh`` is called. This function fetches the S/MIME Key ID of the certificate from the macOS Keychain.
-3. The fetched Key ID is then used by `smimesign` to sign the commit. 
-4. The `jamf-commit-signing.py` AWS Lambda Function can then be used to enforce commit signing on the JAMF server.
-5. The `jamf-github-commit-verifier.py` AWS Lambda Function can be used to verify the signed commits on GitHub.
+# Steps for Setup and Integration
+1. **Configure Certificate Issuance**:
+    - Ensure that the Amazon Private CA is properly set up and that certificates are correctly issued to the devices.
+2. **Set Up `mimesign-wrapper.sh`**:
+    - Ensure that the `mimesign-wrapper.sh` script is correctly configured to fetch the correct Key ID from the macOS Keychain.
+    - Validate the integration of `smimesign` for commit signing.
+3. **Configure AWS Lambda Functions**:
+    - Deploy `jamf-commit-signing.py` and `jamf-github-commit-verifier.py` to AWS Lambda.
+    - Ensure they have the necessary permissions and configurations to interact with JAMF and GitHub.
+4. **GitHub and JAMF Integration**:
+    - Set up the GitHub App and install it on the required repositories.
+    - Configure the JAMF server to work in tandem with your AWS Lambda functions for enforcing and verifying commit signing.
+
+
+
+
+# Description of Files
 
 
 ### smimesign-wrapper.sh
@@ -24,7 +49,7 @@ This AWS Lambda Function interacts with the JAMF API to manage certificates on d
 1. **Import Statements**: The script imports several Python modules that it needs to function. `json` is used for parsing and creating JSON data, `os` is used for interacting with the operating system, `requests` is used for making HTTP requests, and `boto3` is the Amazon Web Services (AWS) Software Development Kit (SDK) for Python, which allows Python developers to write software that makes use of AWS services like Amazon S3, Amazon EC2, etc.
 2. **Constants**: The script defines several constants at the top of the file. `JAMF_URL` is the URL of your JAMF instance, `JAMF_USERNAME` and `JAMF_PASSWORD` are the username and password for your JAMF instance (retrieved from environment variables), and `DEVICE_GROUP_ID` is the ID of the device group in JAMF that has S/MIME certificates.
 3. **get_smime_key_id() Function**: This function uses the `boto3` client for AWS Secrets Manager to retrieve the S/MIME key ID. It creates a Secrets Manager client, retrieves the secret value associated with the 'SMIME_KEY_ID' secret, extracts the key ID from the secret value, and returns it.
-4. **get_jamf_auth_token() Function**: This function is defined to authenticate with the JAMF API and get a session token. The function body isn't included in the provided excerpt, but it likely sends a request to the JAMF API with the `JAMF_USERNAME` and `JAMF_PASSWORD` to authenticate and retrieve a session token.
+4. **get_jamf_auth_token() Function**: This function is defined to authenticate with the JAMF API and get a session token. The it sends a request to the JAMF API with the `JAMF_USERNAME` and `JAMF_PASSWORD` to authenticate and retrieve a session token.
 
 
 ### jamf-github-commit-verifier.py

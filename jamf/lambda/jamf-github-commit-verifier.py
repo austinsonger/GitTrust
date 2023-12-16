@@ -7,7 +7,6 @@
 import json
 import os
 import requests
-import boto3
 
 # Constants
 GITHUB_TOKEN = os.environ['GITHUB_TOKEN']  # GitHub access token
@@ -36,15 +35,12 @@ def verify_commit_with_jamf(commit_data):
     """
     # Extract author's details from commit_data
     author_email = commit_data['commit']['author']['email']
-    ################### TO-DO ###################
-    # Placeholder for JAMF API request to get device details
-    # Replace 'device_id' with the appropriate identifier from JAMF
+
+    # Placeholder for JAMF API request to get device details and Replace 'device_id' with the appropriate identifier from JAMF
     device_id = get_device_id_from_email(author_email)
     device_info = get_device_info_from_jamf(device_id)
-    ################### TO-DO ###################
-    # Placeholder for compliance check logic
-    # This could involve checking if the device is managed by JAMF
-    # and if it complies with security policies
+
+    # Check if the device is managed and compliant
     is_compliant = check_device_compliance(device_info)
 
     return is_compliant
@@ -59,10 +55,16 @@ def get_device_id_from_email(email):
     Returns:
         str: The device ID associated with the email.
     """
-    ################### TO-DO ###################
-    # Placeholder for JAMF API request to map email to device ID
-    # Need to replace this with actual API interaction
-    return "device-id-for-author"
+    url = f"{JAMF_URL}/api/v1/devices"
+    headers = {"Authorization": f"Bearer {JAMF_AUTH_TOKEN}"}
+    params = {"filter": f"email={email}"}
+    response = requests.get(url, headers=headers, params=params)
+    response.raise_for_status()
+    devices = response.json().get("devices", [])
+    if devices:
+        return devices[0]["id"]
+    else:
+        return None
 
 def get_device_info_from_jamf(device_id):
     """
@@ -74,14 +76,11 @@ def get_device_info_from_jamf(device_id):
     Returns:
         dict: Information about the device.
     """
-    ################### TO-DO ###################
-    # Placeholder for JAMF API request to get device details
-    # Replace with actual API interaction
-    # Example API request:
-    # response = requests.get(f"{JAMF_URL}/api/v1/devices/{device_id}", headers={"Authorization": f"Bearer {JAMF_AUTH_TOKEN}"})
-    # response.raise_for_status()
-    # return response.json()
-    return {"managed": True, "compliant": True}
+    url = f"{JAMF_URL}/api/v1/devices/{device_id}"
+    headers = {"Authorization": f"Bearer {JAMF_AUTH_TOKEN}"}
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    return response.json()
 
 def check_device_compliance(device_info):
     """
@@ -93,14 +92,45 @@ def check_device_compliance(device_info):
     Returns:
         bool: True if the device is compliant, False otherwise.
     """
-    ################### TO-DO ###################
-    # Placeholder for compliance check logic
-    # Replace with actual compliance check based on device_info
+    # Check if the device is managed and compliant
     return device_info.get('managed', False) and device_info.get('compliant', False)
+
+def create_check_run(repo_name, commit_sha, conclusion, output):
+    """
+    Create a check run on GitHub for the commit.
+    
+    Args:
+        repo_name (str): The name of the repository.
+        commit_sha (str): The SHA of the commit.
+        conclusion (str): The conclusion of the check run (e.g., "success", "failure").
+        output (dict): The output of the check run.
+
+    Returns:
+        dict: The response from the GitHub API.
+    """
+    url = f"https://api.github.com/repos/{repo_name}/check-runs"
+    headers = {"Authorization": f"Bearer {GITHUB_TOKEN}"}
+    payload = {
+        "name": "Commit Verification",
+        "head_sha": commit_sha,
+        "status": "completed",
+        "conclusion": conclusion,
+        "output": output
+    }
+    response = requests.post(url, headers=headers, json=payload)
+    response.raise_for_status()
+    return response.json()
 
 def lambda_handler(event, context):
     """
     AWS Lambda function handler for GitHub commit verification.
+
+    Parameters:
+    - event (dict): The event data passed to the Lambda function.
+    - context (object): The runtime information of the Lambda function.
+
+    Returns:
+    - dict: The response data returned by the Lambda function.
     """
     # Get the repo name and commit SHA from the event
     repo_name = event.get("repository").get("name")
@@ -109,22 +139,29 @@ def lambda_handler(event, context):
     # Get commit data
     commit_data = get_commit_data(repo_name, commit_sha)
 
-    # Create a Lambda client
-    client = boto3.client('lambda')
+    # Verify the commit with JAMF
+    is_verified = verify_commit_with_jamf(commit_data)
 
-    # Invoke the jamf-commit-signing.py function
-    response = client.invoke(
-        FunctionName='jamf-commit-signing',  # Replace with the actual name of your function
-        InvocationType='RequestResponse',
-        Payload=json.dumps({'commit_data': commit_data})
-    )
+    # Create a check run or commit status based on the verification result
+    if is_verified:
+        conclusion = "success"
+        output = {
+            "title": "Commit Verification",
+            "summary": "The commit has been verified successfully."
+        }
+    else:
+        conclusion = "failure"
+        output = {
+            "title": "Commit Verification",
+            "summary": "The commit failed verification."
+        }
 
-    # Get the verification result from the response
-    verification_result = json.loads(response['Payload'].read())
+    # Create a check run on GitHub
+    response = create_check_run(repo_name, commit_sha, conclusion, output)
 
     return {
         'statusCode': 200,
-        'body': json.dumps({'verification_result': verification_result})
+        'body': json.dumps({'verification_result': is_verified})
     }
 
 if __name__ == "__main__":

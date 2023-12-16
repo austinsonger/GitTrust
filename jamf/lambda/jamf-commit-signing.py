@@ -7,11 +7,17 @@ import json
 import os
 import requests
 import boto3
+import smime
+import base64
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.hashes import SHA256
+import json
+
 
 # Constants
 JAMF_URL = "https://your-jamf-instance-url"
-JAMF_USERNAME = os.environ['JAMF_USERNAME']
-JAMF_PASSWORD = os.environ['JAMF_PASSWORD']
+JAMF_API_TOKEN_SECRET_ID = 'JAMF_API_TOKEN'
 DEVICE_GROUP_ID = "your-device-group-id-for-smime"  # ID of the device group in JAMF with S/MIME certs
 
 def get_smime_key_id():
@@ -25,11 +31,12 @@ def get_smime_key_id():
 
 def get_jamf_auth_token():
     """
-    Authenticate with the JAMF API and get a session token.
+    Retrieve the JAMF API token from a secure storage and use it for authentication.
     """
-    auth_response = requests.get(f"{JAMF_URL}/uapi/auth/tokens", auth=(JAMF_USERNAME, JAMF_PASSWORD))
-    auth_response.raise_for_status()
-    return auth_response.json().get('token')
+    client = boto3.client('secretsmanager')
+    response = client.get_secret_value(SecretId=JAMF_API_TOKEN_SECRET_ID)
+    jamf_api_token = response['SecretString']
+    return jamf_api_token
 
 def get_devices_with_smime_certs(jamf_token):
     """
@@ -40,29 +47,27 @@ def get_devices_with_smime_certs(jamf_token):
     response.raise_for_status()
     return response.json().get('computers', [])
 
-def verify_commit_signature(commit_data, device_list):
+def verify_smime_signature(signature, device):
     """
-    Verify if the commit is signed by a device that is managed and contains an S/MIME certificate.
+    Verify the S/MIME signature using the device information.
     
     Args:
-        commit_data (dict): Data about the commit, including author information and signature.
-        device_list (list): List of devices that contain S/MIME certificates.
+        signature (str): The signature to be verified.
+        device (dict): Information about the device.
 
     Returns:
-        bool: True if the commit signature is verified, False otherwise.
+        bool: True if the signature is valid, False otherwise.
     """
-    # Extract necessary information from commit_data
-    author_email = commit_data.get('commit', {}).get('author', {}).get('email')
-    signature = commit_data.get('signature')  # Assuming this is how the signature is stored
+    # Convert the signature from base64 to bytes
+    signature_bytes = base64.b64decode(signature)
 
-    # Check if the author's device is in the managed device list
-    author_device = get_device_from_email(author_email, device_list)
-    if not author_device:
-        return False
+    # Load the device's S/MIME certificate
+    smime_cert = smime.load_certificate(device['smime_certificate'])
 
-    # Verify the commit signature (Placeholder for actual signature verification logic)
-    # Need to replace this with a proper method to verify S/MIME signatures
-    return verify_smime_signature(signature, author_device)
+    # Verify the signature using the S/MIME certificate
+    is_valid = smime.verify_signature(signature_bytes, smime_cert)
+
+    return is_valid
 
 def get_device_from_email(email, device_list):
     """
@@ -91,11 +96,39 @@ def verify_smime_signature(signature, device):
     Returns:
         bool: True if the signature is valid, False otherwise.
     """
-    # Placeholder for actual S/MIME signature verification logic
-    # This should involve using the device's S/MIME certificate to verify the signature
-    return True  # Placeholder return value
+    # Load the device's S/MIME certificate
+    smime_cert = serialization.load_pem_public_key(device['smime_certificate'].encode())
+
+    # Verify the signature using the S/MIME certificate
+    try:
+        smime_cert.verify(
+            signature=base64.b64decode(signature),
+            data=device['commit_data'].encode(),
+            padding=padding.PKCS1v15(),
+            algorithm=SHA256()
+        )
+        return True
+    except Exception:
+        return False
 
 def lambda_handler(event, context):
+    def verify_commit_signature(commit_data, managed_devices):
+        """
+        Verify the commit signature using the managed devices.
+        
+        Args:
+            commit_data (dict): Data of the commit.
+            managed_devices (list): List of managed devices.
+
+        Returns:
+            bool: True if the signature is valid, False otherwise.
+        """
+        for device in managed_devices:
+            signature = commit_data.get('signature')  # Replace with the actual signature field from commit_data
+            if verify_smime_signature(signature, device):
+                return True
+        return False
+
     """
     AWS Lambda function handler for verifying commit signatures.
     """
@@ -104,7 +137,7 @@ def lambda_handler(event, context):
     jamf_token = get_jamf_auth_token()
     managed_devices = get_devices_with_smime_certs(jamf_token)
 
-    commit_data = event.get("commit_data")  # Replace with actual commit data from the event
+    commit_data = event.get("commit_data")  
     verification_result = verify_commit_signature(commit_data, managed_devices)
 
     return {
