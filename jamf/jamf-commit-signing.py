@@ -1,5 +1,6 @@
 ###########
 # PURPOSE: The script should interact with the JAMF API to manage certificates on devices, ensuring they are appropriately used for signing commits. 
+# Please note, this script assumes you have already set up S/MIME certificates in JAMF Pro and these certificates are being used on the devices for signing commits. 
 ###########
 import requests
 import json
