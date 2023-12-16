@@ -1,5 +1,6 @@
 ############
 # PURPOSE: This script will interact with GitHub APIs to fetch commit data and then validate it against criteria such as S/MIME signatures, device trust status from JAMF, or other verification methods you have in place.
+# Triggered by GitHub webhook events for new commits. 
 ############
 
 import json
