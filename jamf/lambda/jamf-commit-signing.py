@@ -1,16 +1,27 @@
+# This script is designed to be used as an AWS Lambda function.
 ###########
-# PURPOSE: The script should interact with the JAMF API to manage certificates on devices, ensuring they are appropriately used for signing commits. 
+# PURPOSE: The WS Lambda function interacts with the JAMF API to manage certificates on devices, ensuring they are appropriately used for signing commits. 
 # Please note, this script assumes you have already set up S/MIME certificates in JAMF Pro and these certificates are being used on the devices for signing commits. 
 ###########
 import json
 import os
 import requests
+import boto3
 
 # Constants
 JAMF_URL = "https://your-jamf-instance-url"
 JAMF_USERNAME = os.environ['JAMF_USERNAME']
 JAMF_PASSWORD = os.environ['JAMF_PASSWORD']
 DEVICE_GROUP_ID = "your-device-group-id-for-smime"  # ID of the device group in JAMF with S/MIME certs
+
+def get_smime_key_id():
+    # Create a Secrets Manager client
+    client = boto3.client('secretsmanager')
+    # Retrieve the secret value
+    response = client.get_secret_value(SecretId='SMIME_KEY_ID')
+    # Get the key ID from the secret value
+    key_id = response['SecretString']
+    return key_id
 
 def get_jamf_auth_token():
     """
@@ -88,6 +99,8 @@ def lambda_handler(event, context):
     """
     AWS Lambda function handler for verifying commit signatures.
     """
+    # Get the S/MIME Key ID
+    key_id = get_smime_key_id()
     jamf_token = get_jamf_auth_token()
     managed_devices = get_devices_with_smime_certs(jamf_token)
 

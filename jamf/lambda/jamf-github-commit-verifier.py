@@ -1,3 +1,4 @@
+# This script is designed to be used as an AWS Lambda function.
 ############
 # PURPOSE: This script will interact with GitHub APIs to fetch commit data and then validate it against criteria such as S/MIME signatures, device trust status from JAMF, or other verification methods you have in place.
 # Triggered by GitHub webhook events for new commits. 
@@ -6,6 +7,7 @@
 import json
 import os
 import requests
+import boto3
 
 # Constants
 GITHUB_TOKEN = os.environ['GITHUB_TOKEN']  # GitHub access token
@@ -100,18 +102,26 @@ def lambda_handler(event, context):
     """
     AWS Lambda function handler for GitHub commit verification.
     """
-    # Parse GitHub webhook payload
-    payload = json.loads(event['body'])
-    repo_name = payload['repository']['full_name']
-    commit_sha = payload['head_commit']['id']
+    # Get the repo name and commit SHA from the event
+    repo_name = event.get("repository").get("name")
+    commit_sha = event.get("commit").get("sha")
 
-    # Get commit data from GitHub
+    # Get commit data
     commit_data = get_commit_data(repo_name, commit_sha)
 
-    # Verify commit with JAMF
-    verification_result = verify_commit_with_jamf(commit_data)
+    # Create a Lambda client
+    client = boto3.client('lambda')
 
-    # Return the verification result
+    # Invoke the jamf-commit-signing.py function
+    response = client.invoke(
+        FunctionName='jamf-commit-signing',  # Replace with the actual name of your function
+        InvocationType='RequestResponse',
+        Payload=json.dumps({'commit_data': commit_data})
+    )
+
+    # Get the verification result from the response
+    verification_result = json.loads(response['Payload'].read())
+
     return {
         'statusCode': 200,
         'body': json.dumps({'verification_result': verification_result})
